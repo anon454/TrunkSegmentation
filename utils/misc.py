@@ -31,7 +31,7 @@ def get_global_opts():
         'robotcar_corr_path': '/example/path',
         'robotcar_im_path': '/example/path',
 
-        'cmu_root_path': '/example/path',
+        'cmu_root_path': '/home/gpu_user/assia/ws/datasets/correspondence/CMU',
         'cmu_corr_path': '/example/path',
         'cmu_im_path': '/example/path'
     }
