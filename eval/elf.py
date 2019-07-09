@@ -76,12 +76,15 @@ def segment_images_in_folder_for_experiments(network_folder, args):
         print( "[%d/%d (%.1fs/%.1fs)] %s" % (count, img_num, 
             tnow - t0, (tnow - t0) / count * img_num, img_root_fn))
 
-        img = cv2.imread(img_fn).astype(np.float32)
+        img = cv2.imread(img_fn)
         img = img[:256, :256]
-        img -= np.array([123.68, 116.779, 103.939])
-        img = np.expand_dims(img.transpose((2,0,1)),0) # bz, c, h, w
-        img_t = torch.Tensor(img.astype(np.float32))
-        img_v = Variable(img_t, requires_grad=True).cuda()
+
+        imgf = img.astype(np.float32)
+        imgf -= np.array([123.68, 116.779, 103.939])
+        imgf = np.expand_dims(imgf.transpose((2,0,1)),0) # bz, c, h, w
+        img_t = torch.Tensor(imgf)
+        #img_v = Variable(img_t, requires_grad=False).cuda()
+        img_v = Variable(img_t, requires_grad=False).cuda().requires_grad_()
         print('img.shape', img_v.size())
 
         output = elfNet(img_v)
@@ -90,10 +93,35 @@ def segment_images_in_folder_for_experiments(network_folder, args):
         print('pool1.shape', output_np.shape) # 1,3,128,128
         
         elfNet.zero_grad()
-        output.backward(gradient=output)
+        output.backward(gradient=output, retain_graph=True)
         grad_arr = elfNet.gradients.cpu().data.numpy()[0]
-        print(grad_arr.shape)
-        #toto = grad(output, img_slices)
+        print('grad_arr.shape', grad_arr.shape) # 128, 128, 128
+
+        print('img_v.is_leaf', img_v.is_leaf)
+        print('output.is_leaf', output.is_leaf)
+ 
+        toto = torch.autograd.backward(output, output)
+    
+        #print(img_v.grad)
+        print('img_v.grad.shape: ', img_v.grad.size())
+        grad = img_v.grad.cpu().data.numpy().squeeze()
+        print(grad.shape)
+        grad = np.transpose(grad, (1,2,0))
+        grad = np.abs(grad)
+        grad = np.mean(grad, axis=2)
+        grad /= np.max(grad)
+        cv2.imshow('img', img)
+        cv2.imshow('grad', grad)
+        cv2.waitKey(0)
+        #print(toto)
+        #toto_np = toto.cpu().data.numpy()
+        #print('toto_np.shape', toto_np.shape)
+       
+        
+        ## ko
+        #toto = grad(output, img_v)
+        #toto_np = toto.cpu().data.numpy()
+        #print('toto_np.shape', toto_np.shape)
 
         count += 1
         if count == 3:

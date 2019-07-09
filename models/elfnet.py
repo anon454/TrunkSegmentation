@@ -33,7 +33,9 @@ class ELFNet(nn.Module):
         
         self.gradients = None
         def hook_function(module, grad_in, grad_out):
-            self.gradients = grad_in[0]
+            print('grad_in.shape', grad_in[0].size()) # feature map
+            print('grad_out.shape', grad_out[0].size()) # gradient
+            self.gradients = grad_out[0]
             # register hook to last feature map
         #feat_list = self.fcn._modules
         #input(feat_list)
