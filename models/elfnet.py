@@ -23,13 +23,26 @@ class ELFNet(nn.Module):
 
     def __init__(self, fcn):
         super(ELFNet, self).__init__()
-       
-        self.conv1 = fcn._modules['layer1']._modules['conv1'] # I hate pytorch
-        self.conv2 = fcn._modules['layer1']._modules['conv2'] # I hate pytorch
-        self.conv3 = fcn._modules['layer1']._modules['conv3'] # I hate pytorch
-        self.pool1 = fcn._modules['layer1']._modules['pool'] # I hate pytorch
+        
+        # pre resnet
+        print(fcn._modules['layer1']._modules) # I hate pytorch
+        print(fcn._modules['layer1']._modules['conv1']._modules)
+
+        #self.conv1 =fcn._modules['layer1']._modules['conv1']._modules['conv']
+
+        # layer1
+        self.l1_conv1 = fcn._modules['layer1']._modules['conv1'] # I hate pytorch
+        self.l1_conv2 = fcn._modules['layer1']._modules['conv2'] # I hate pytorch
+        self.l1_conv3 = fcn._modules['layer1']._modules['conv3'] # I hate pytorch
+        self.l1_pool1 = fcn._modules['layer1']._modules['pool'] # I hate pytorch
         #MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
-        print(self.pool1)
+        print(self.l1_pool1)
+        
+        # layer2
+        self.l2_block1 = fcn._modules['layer2']._modules['block1']
+        self.l2_block2 = fcn._modules['layer2']._modules['block2']
+        self.l2_block3 = fcn._modules['layer2']._modules['block3']
+
         
         self.gradients = None
         def hook_function(module, grad_in, grad_out):
@@ -39,15 +52,20 @@ class ELFNet(nn.Module):
             # register hook to last feature map
         #feat_list = self.fcn._modules
         #input(feat_list)
-        self.pool1.register_backward_hook(hook_function)
+        self.l2_block3.register_backward_hook(hook_function)
 
     def forward(self, x):
-        x_size = x.size()
-        conv1 = self.conv1(x)
-        conv2 = self.conv2(conv1)
-        conv3 = self.conv3(conv2)
-        h = self.pool1(conv3)
-        return h
+        
+        l1_conv1 = self.l1_conv1(x)
+        l1_conv2 = self.l1_conv2(l1_conv1)
+        l1_conv3 = self.l1_conv3(l1_conv2)
+        l1_pool1 = self.l1_pool1(l1_conv3)
+
+        l2_block1 = self.l2_block1(l1_pool1)
+        l2_block2 = self.l2_block2(l2_block1)
+        l2_block3 = self.l2_block3(l2_block2)
+
+        return l2_block3
 
 
 

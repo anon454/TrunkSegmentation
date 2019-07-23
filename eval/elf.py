@@ -77,14 +77,14 @@ def segment_images_in_folder_for_experiments(network_folder, args):
             tnow - t0, (tnow - t0) / count * img_num, img_root_fn))
 
         img = cv2.imread(img_fn)
-        img = img[:256, :256]
+        #img = img[:256, :256]
 
         imgf = img.astype(np.float32)
         imgf -= np.array([123.68, 116.779, 103.939])
         imgf = np.expand_dims(imgf.transpose((2,0,1)),0) # bz, c, h, w
         img_t = torch.Tensor(imgf)
         #img_v = Variable(img_t, requires_grad=False).cuda()
-        img_v = Variable(img_t, requires_grad=False).cuda().requires_grad_()
+        img_v = Variable(img_t).cuda().requires_grad_()
         print('img.shape', img_v.size())
 
         output = elfNet(img_v)
@@ -124,7 +124,7 @@ def segment_images_in_folder_for_experiments(network_folder, args):
         #print('toto_np.shape', toto_np.shape)
 
         count += 1
-        if count == 3:
+        if count == 10:
             break
 
 
