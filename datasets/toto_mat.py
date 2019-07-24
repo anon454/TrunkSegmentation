@@ -14,7 +14,7 @@ if (DATA == 0):
     corr_dir = '%s/correspondence/Robotcar/correspondence_data'%DATA_ROOT_DIR
     root_imgs = '%s/RobotCar-Seasons/images/'%DATA_ROOT_DIR
 elif (DATA == 1):
-    SLICE = 6
+    SLICE = 24
     corr_dir = '%s/correspondence/CMU/correspondence_data/slice%d/'%(DATA_ROOT_DIR,SLICE)
     root_imgs = '%s/CMU-Seasons/images/'%DATA_ROOT_DIR
 else:
@@ -22,7 +22,12 @@ else:
     exit(1)
 
 
+
+mod2 = 0
 for fn in sorted(os.listdir(corr_dir)):
+    mod2 = (mod2+1)%2
+    #if mod2 % 2 ==0:
+    #    continue
 
     #fn = 'correspondence_slice6_run13_run21_c11_c21.mat' # cmu
     #fn = 'correspondence_run1_overcast-reference_run2_dawn_c13_c2645.mat' # robotcar

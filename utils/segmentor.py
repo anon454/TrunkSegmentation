@@ -1,16 +1,22 @@
 import utils.joint_transforms as joint_transforms
 from utils.misc import check_mkdir
+
+
 import os
+import numbers
 import numpy as np
-import torch
+from scipy.special import expit
+
 from PIL import Image
+import cv2
+
+import torch
 import torchvision.transforms as standard_transforms
 from torch.autograd import Variable
-import numbers
 import torchvision.transforms.functional as F
 
-import sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+#import sys
+#sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 
 class Segmentor():
@@ -25,6 +31,9 @@ class Segmentor():
         self.num_classes = num_classes
         self.colorize_fcn = colorize_fcn
         self.n_slices_per_pass = n_slices_per_pass
+
+        self.softmax = torch.nn.Softmax2d()
+
 
     def run_on_slices(self, img_slices, slices_info,
                       sliding_transform_step=2 / 3., use_gpu=True):
@@ -47,6 +56,7 @@ class Segmentor():
             self.num_classes,
             img_slices.size(2),
             img_slices.size(3)).to(device)
+        
         for ind in range(0, img_slices.size(0), self.n_slices_per_pass):
             max_ind = min(ind + self.n_slices_per_pass, img_slices.size(0))
             with torch.no_grad():
@@ -101,12 +111,15 @@ class Segmentor():
         del output_slice
         del interpol_weight
 
-        return output.max(0)[1].squeeze_(0).cpu().numpy()
+        #print(output.size()) # num_class, h, w
+        return output
+        #return output.max(0)[1].squeeze_(0).cpu().numpy()
 
     def run_and_save(
         self,
         img_path,
         seg_path,
+        save_folder,
         pre_sliding_crop_transform=None,
         sliding_crop=joint_transforms.SlidingCropImageOnly(713, 2 / 3.),
         input_transform=standard_transforms.ToTensor(),
@@ -149,12 +162,15 @@ class Segmentor():
         slices_info = torch.LongTensor(slices_info)
         slices_info.squeeze_(0)
 
-        prediction_orig = self.run_on_slices(
+        output = self.run_on_slices(
             img_slices,
             slices_info,
             sliding_transform_step=sliding_crop.stride_rate,
             use_gpu=use_gpu)
+            
 
+        # save color
+        prediction_orig = output.max(0)[1].squeeze_(0).cpu().numpy()
         if self.colorize_fcn is not None:
             prediction_colorized = self.colorize_fcn(prediction_orig)
         else:
@@ -165,7 +181,33 @@ class Segmentor():
                 prediction_colorized, img_size_orig[::-1], interpolation=Image.NEAREST)
 
         if seg_path is not None:
-            check_mkdir(os.path.dirname(seg_path))
-            prediction_colorized.save(seg_path)
+            #check_mkdir(os.path.dirname(seg_path))
+            #cv2.imshow('prediction_colorized', prediction_colorized)
+            #cv2.waitKey(0)
+            #prediction_colorized.save('%s.png'%seg_path.split(".")[0])
+            prediction_colorized.save('%s'%seg_path)
+
+
+        # save logits
+        output = output.unsqueeze(0)
+        logits = self.softmax(output)
+        #output_np = output.cpu().numpy()
+        logits_np = logits.cpu().numpy()[0,:,:,:]
+        print(logits_np)
+        print(logits_np.shape)
+        
+        fname = os.path.basename(seg_path)
+        prob_out_dir = '%s/prob'%save_folder
+        for k in range(logits_np.shape[0]):
+            prob_k_fn = '%s/class_%d/%s'%(prob_out_dir, k, fname)
+            print(prob_k_fn)
+            cv2.imwrite(prob_k_fn, (logits_np[k,:,:]*255).astype(np.uint8))
+        
+
+        # save labels
+        lab_fn = '%s/lab/%s'%(save_folder, fname)
+        print(lab_fn)
+        cv2.imwrite(lab_fn, prediction_orig.astype(np.uint8))
 
         return prediction_orig
+
