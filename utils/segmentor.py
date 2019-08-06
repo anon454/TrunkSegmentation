@@ -193,20 +193,20 @@ class Segmentor():
         logits = self.softmax(output)
         #output_np = output.cpu().numpy()
         logits_np = logits.cpu().numpy()[0,:,:,:]
-        print(logits_np)
-        print(logits_np.shape)
+        #print(logits_np)
+        #print(logits_np.shape)
         
         fname = os.path.basename(seg_path)
         prob_out_dir = '%s/prob'%save_folder
         for k in range(logits_np.shape[0]):
             prob_k_fn = '%s/class_%d/%s'%(prob_out_dir, k, fname)
-            print(prob_k_fn)
+            #print(prob_k_fn)
             cv2.imwrite(prob_k_fn, (logits_np[k,:,:]*255).astype(np.uint8))
         
 
         # save labels
         lab_fn = '%s/lab/%s'%(save_folder, fname)
-        print(lab_fn)
+        #print(lab_fn)
         cv2.imwrite(lab_fn, prediction_orig.astype(np.uint8))
 
         return prediction_orig

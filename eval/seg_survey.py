@@ -24,7 +24,7 @@ import time
 
 
 # colmap output dir
-MACHINE = 0
+MACHINE = 1
 if MACHINE == 0:
     DATASET_DIR = '/home/abenbihi/ws/datasets/'
     WS_DIR = '/home/abenbihi/ws/'
@@ -121,7 +121,7 @@ def segment(slice_id, cam_id, survey_id):
         tnow = time.time()
         print( "[%d/%d (%.1fs/%.1fs)] %s" % (count, len(filenames_ims), 
             tnow - t0, (tnow - t0) / count * len(filenames_ims), im_file))
-        print(save_path)
+        #print(save_path)
         segmentor.run_and_save(
             im_file,
             save_path,
@@ -132,8 +132,8 @@ def segment(slice_id, cam_id, survey_id):
             skip_if_seg_exists = True,
             use_gpu = True)
         count += 1
-        if count == 3:
-            break
+        #if count == 3:
+        #    break
 
 
 
@@ -170,8 +170,9 @@ if __name__ == '__main__':
 
     slice_id = 24
     cam_id = 0
-    survey_id = 0
-    segment(slice_id, cam_id, survey_id)
+    for survey_id in range(10):
+        survey_id = 0
+        segment(slice_id, cam_id, survey_id)
 
 
 
