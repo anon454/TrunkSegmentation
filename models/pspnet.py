@@ -98,38 +98,7 @@ class PSPNet(nn.Module):
         ]))
         self.conv6_1 = nn.Conv2d(256, n_classes, 1, stride=1, padding=0)
 
-        
-        #self.gradients = None
-        #def hook_function(module, grad_in, grad_out):
-        #    self.gradients = grad_in[0]
-        #    # register hook to last feature map
-        #feat_list = self.fcn._modules
-        #input(feat_list)
-
-        #self.conv1 = self.fcn._modules['layer1']._modules['conv1'] # I hate pytorch
-        #self.conv2 = self.fcn._modules['layer1']._modules['conv2'] # I hate pytorch
-        #self.conv3 = self.fcn._modules['layer1']._modules['conv3'] # I hate pytorch
-        #self.pool1 = self.fcn._modules['layer1']._modules['pool'] # I hate pytorch
-        ##MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
-        #print(self.pool1)
-        
-        # ['layer4', 'layer2', 'layer3', 'layer1', 'layer5']
-        #feat_list = list(dict(self.fcn.named_children()).keys())
-        #feat_list = list(dict(self.fcn.named_children()))
-        #print(feat_list)
-        
-        #feat_det = self.fcn.layer5 
-        #feat_det.register_backward_hook(hook_function)
-
-
     def forward(self, x):
-        #x_size = x.size()
-        #conv1 = self.conv1(x)
-        #conv2 = self.conv2(conv1)
-        #conv3 = self.conv3(conv2)
-        #h = self.pool1(conv3)
-        #return h
-
         if self.training:
             aux, h = self.fcn(x)
             aux_feat = self.aux(aux)

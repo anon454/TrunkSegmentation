@@ -65,7 +65,7 @@ def train_with_correspondences(save_folder, startnet, args):
         args['best_record'] = eval(best_val_dict_str.rstrip())
 
     net.train()
-    freeze_bn(net)
+    freeze_bn(net) # TODO: check relevance
 
     # Data loading setup
     if args['corr_set'] == 'rc':
