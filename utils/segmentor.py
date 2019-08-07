@@ -129,7 +129,8 @@ class Segmentor():
         verbose=False,
         skip_if_seg_exists=False,
         use_gpu=True,
-        save_logits=False
+        save_logits=False,
+        mask_path=None
     ):
         """
         img                  - Path of input image
@@ -151,9 +152,24 @@ class Segmentor():
                         "Segmentation already exists, overwriting: {}".format(seg_path))
 
         try:
-            img = Image.open(img_path).convert('RGB')
+            img = cv2.imread(img_path)[:, :700]
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            #img = Image.open(img_path).convert('RGB')
         except OSError:
             print("Error reading input image, skipping: {}".format(img_path))
+
+        if mask_path is not None:
+            mask = cv2.imread(mask_path, cv2.IMREAD_UNCHANGED)
+            #print(np.unique(mask))
+            #mask_col = np.zeros(img.shape).astype(np.uint8)
+            #mask_col[mask==0] = 0
+            #mask_col[mask==1] = [255,0,0]
+            #cv2.imshow('mask_col', mask_col)
+            img[mask==1] = 0 # label to ignore
+            #cv2.imshow('mask', mask)
+            #cv2.imshow('img', img)
+            #cv2.waitKey(0)
+        img = Image.fromarray(img.astype(np.uint8))
 
         # creating sliding crop windows and transform them
         img_size_orig = img.size

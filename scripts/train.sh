@@ -28,16 +28,16 @@ fi
 
 python3 -m train.train_pspnet \
   --trial "$trial" \
-  --max_epoch 2 \
+  --max_epoch 50 \
   --batch_size 3 \
   --lr 2.5e-5 \
   --lr_decay 1 \
   --weight_decay 1e-4 \
   --momentum 0.9 \
   --startnet pth/from-paper/CMU-CS-Vistas-CE.pth \
-  --log_interval 10 \
-  --summary_interval 10 \
-  --val_interval 1 \
+  --log_interval 50 \
+  --summary_interval 100 \
+  --val_interval 10 \
   --data_id 0 \
   --img_root_dir /mnt/lake/ \
   --seg_root_dir /home/gpu_user/assia/ws/datasets/lake/datasets/seg \
@@ -49,5 +49,5 @@ python3 -m train.train_pspnet \
   --rot_max 10 \
   --random_crop 1 \
   --random_flip 1 \
-  --data_debug 1
+  --data_debug 0
   

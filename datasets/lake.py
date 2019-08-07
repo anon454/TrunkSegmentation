@@ -16,21 +16,6 @@ import tools
 ignore_label = 255
 
 
-def remap_mask(new_vals, direction):
-    # function to map mask from 0,1,2,255 to 0,1,2,3 and back again, this
-    # makes all new pixels introduced by transforms to be ignored during
-    # training
-    s2, s1 = new_vals.shape[:2]
-    if direction == 0:
-        new_vals = new_vals + 1
-        new_vals[new_vals == 256] = 0
-    else:
-        new_vals[new_vals == 0] = 256
-        new_vals = new_vals - 1
-    new_vals = np.reshape(new_vals, (s2, s1))
-    return new_vals 
-
-
 class Lake(Dataset):
     """
     Image pair dataset used for weak supervision
@@ -55,12 +40,15 @@ class Lake(Dataset):
         csv_file = 'meta/list/data/%d/%s.txt'%(args.data_id, mode)
         self.data = np.loadtxt(csv_file, dtype=str)
         
+        # mapping from my labels to cityscapes (may be useless in the future)
         self.id_to_trainid = {}
         for i in range(33):
             self.id_to_trainid[i] = ignore_label
-        self.id_to_trainid[23] = 2 # sky
-        self.id_to_trainid[21] = 3 # vegetation
+        self.id_to_trainid[2] = 10 # sky
+        self.id_to_trainid[3] = 8 # vegetation
 
+        
+        # data augmentation
         self.random_rotate = (args.random_rotate==1)
         self.random_crop = (args.random_crop==1)
         self.random_flip = (args.random_flip==1)
@@ -82,21 +70,24 @@ class Lake(Dataset):
 
         # small rotation 
         if self.random_rotate:
+            mask_mask = (255*np.ones(mask.shape)).astype(np.uint8)
             center = ((w-1)/2.0, (h-1)/2.0)
             rot = np.random.randint(self.rot_max)
             M = cv2.getRotationMatrix2D(center, rot, 1)
             img = cv2.warpAffine(img, M, (w,h))
             mask = cv2.warpAffine(mask, M, (w,h))
+            mask_mask = cv2.warpAffine(mask_mask, M, (w,h))
+            mask[mask_mask==0] = 0
 
         # do random crop
         if self.random_crop:
             top = np.random.randint(h -  self.train_crop_size)
             bottom = np.minimum(h, top + self.train_crop_size)
-            print('top-botton: %d -> %d'%(top, bottom))
+            #print('top-botton: %d -> %d'%(top, bottom))
             
             left = np.random.randint(w - self.train_crop_size)
             right = np.minimum(w, left + self.train_crop_size)
-            print('left-right: %d -> %d'%(left, right))
+            #print('left-right: %d -> %d'%(left, right))
             
             img = img[top:bottom, left:right, :]
             mask = mask[top:bottom, left:right]
@@ -125,35 +116,26 @@ class Lake(Dataset):
 
     def __getitem__(self, idx):
         
-        #print(self.img_root_dir)
-        #print(self.data[idx,0])
-        #print(idx)
         img_path = '%s/%s'%(self.img_root_dir, self.data[idx,0])
         mask_path = '%s/%s'%(self.seg_root_dir, self.data[idx,1])
 
         img = cv2.imread(img_path)[:,:700]
         mask = cv2.imread(mask_path, cv2.IMREAD_UNCHANGED)
 
+       
+        img, mask = self.augment(img, mask)
+        img = img.transpose((2,0,1)) # h,w,c -> c,h,w
+        #print('img.shape', img.shape)
+        img = torch.Tensor(img.astype(np.float32))
+        #print('mask.shape', mask.shape)
+
         # remap label ids to be coherent with cityscapes
         mask_copy = mask.copy()
         for k, v in self.id_to_trainid.items():
             mask_copy[mask == k] = v
-        mask = mask_copy.astype(np.uint8)
-
-        # TODO: I don't know why we do this
-        # from 0,1,2,...,255 to 0,1,2,3,... (to set introduced pixels due
-        # to transform to ignore)
-        if self.mode=='train':
-            mask = remap_mask(mask, 0)
-            img, mask = self.augment(img, mask)
-            mask = remap_mask(mask, 1)  # back again
-            print('mask.shape', mask.shape)
-            mask = torch.from_numpy(np.array(mask, dtype=np.int32)).long()
+        mask = mask_copy.astype(np.int32)
+        mask = torch.from_numpy(mask).long()
         
-        img = img.transpose((2,0,1)) # h,w,c -> c,h,w
-        print('img.shape', img.shape)
-        img = torch.Tensor(img.astype(np.float32))
-
         # val
         if self.mode=='val':
             img = self.transform_before_sliding(img)

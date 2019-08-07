@@ -3,6 +3,7 @@ import datetime
 import os, sys, argparse
 import numpy as np
 from math import sqrt
+import cv2
 
 import torch
 import torchvision.transforms as standard_transforms
@@ -14,6 +15,7 @@ from utils.validator import Validator
 from utils.misc import AverageMeter, freeze_bn, rename_keys_to_match
 from datasets import lake
 from models import pspnet
+import tools
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
@@ -46,7 +48,6 @@ def train(args):
     # loss
     seg_loss_fct = torch.nn.CrossEntropyLoss( reduction='elementwise_mean',
             ignore_index=lake.ignore_label).to(device)
-    softm = torch.nn.Softmax2d()
 
     # Optimizer setup
     optimizer = optim.SGD([
@@ -90,6 +91,9 @@ def train(args):
     curr_iter = start_iter
 
     max_iter = int(args.max_epoch * len(seg_loader) / args.batch_size)
+        
+    mean_std = ([-116.779/255.0, -103.939/255., -123.68/255.], [1, 1, 1])
+    normalize_back = standard_transforms.Normalize(*mean_std)
 
     for epoch in range(args.max_epoch):
         for batch_idx, batch in enumerate(seg_loader):
@@ -104,13 +108,11 @@ def train(args):
             optimizer.zero_grad()
             outputs, aux = net(inputs)
 
-            print('inputs.shape', inputs.size())
-            print('gts.shape', gts.size())
-            print('outputs.shape', outputs.size())
+            #print('inputs.shape', inputs.size())
+            #print('gts.shape', gts.size())
+            #print('outputs.shape', outputs.size())
 
-            break
-
-            main_loss =  seg_loss_fct(outputs, gts)
+            main_loss = seg_loss_fct(outputs, gts)
             aux_loss = seg_loss_fct(aux, gts)
             loss = main_loss + 0.4 * aux_loss
             loss.backward()
@@ -120,18 +122,54 @@ def train(args):
             val_iter += 1
 
             
-            seg_loss_meters.update( main_loss.item(), slice_batch_pixel_size)
+            #seg_loss_meters.update( main_loss.item(), slice_batch_pixel_size)
             if curr_iter % args.summary_interval:
-                writer.add_scalar('train_seg_loss_cs', seg_loss_meters.avg,  curr_iter)
+                writer.add_scalar('train_loss', loss,  curr_iter)
                 writer.add_scalar('lr', optimizer.param_groups[1]['lr'], curr_iter)
+                
+                output_np = outputs[0,:,:,:].max(0)[1].squeeze_(0).cpu().numpy()
+                output_np_copy = output_np.copy()
+                for k, v in seg_set.id_to_trainid.items():
+                    output_np_copy[output_np == v] = k
+                output_np = output_np_copy
+                #print('output_np.shape', output_np.shape)
+                output_col = tools.mask2col(output_np)
+                #cv2.imshow('output_col', output_col)
+                #cv2.waitKey(0)
+                output_col = output_col[:,:,::-1]
+                #output_col /= np.max(output_col)
+                output_col = np.transpose(output_col, (2,0,1))
+
+
+                gt_np = np.squeeze(gts.data.cpu().numpy()[0,:,:])
+                gt_np_copy = gt_np.copy()
+                for k, v in seg_set.id_to_trainid.items():
+                    gt_np_copy[gt_np == v] = k
+                gt_np = gt_np_copy
+
+                gt_col = tools.mask2col(gt_np)
+                gt_col = gt_col[:,:,::-1] # bgr -> rgb for tensorboard
+                #cv2.imshow('gt_col', gt_col)
+                #cv2.waitKey(0)
+                #gt_col /= np.max(gt_col)
+                gt_col = np.transpose(gt_col, (2,0,1))
+
+                #inputs_np = inputs.data.cpu().numpy()[0,:,:,:]
+                #inputs_np = np.transpose(inputs_np, (1,2,0))
+                #inputs /= inputs.max()
+                #inputs = normalize_back(inputs.data)
+
+                writer.add_image('img', inputs[0,:,:,:])
+                writer.add_image('pred', output_col)
+                writer.add_image('gt', gt_col)
+
+
             if curr_iter % args.log_interval == 0:
                 str2write = 'Epoch %d/%d\tIter %d\tLoss: %.5f\tlr %.10f' % (
-                    epoch, args.max_epoch, curr_iter, len(seg_loader), seg_loss_meters.avg, optimizer.param_groups[1]['lr'])
+                    epoch, args.max_epoch, curr_iter, loss.data.cpu().numpy(), optimizer.param_groups[1]['lr'])
                 print(str2write)
                 f_handle.write(str2write + "\n")
             
-        break
-
         # validation
         if epoch % args.val_interval==0:
             eval_iter_max = 10
