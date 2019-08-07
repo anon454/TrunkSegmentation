@@ -36,7 +36,8 @@ class Segmentor():
 
 
     def run_on_slices(self, img_slices, slices_info,
-                      sliding_transform_step=2 / 3., use_gpu=True):
+                      sliding_transform_step=2 / 3., use_gpu=True,
+                      return_logits=False):
         imsize1 = slices_info[:, 1].max().item()
         imsize2 = slices_info[:, 3].max().item()
 
@@ -112,8 +113,10 @@ class Segmentor():
         del interpol_weight
 
         #print(output.size()) # num_class, h, w
-        return output
-        #return output.max(0)[1].squeeze_(0).cpu().numpy()
+        if return_logits:
+            return output
+        else: # return class predictions
+            return output.max(0)[1].squeeze_(0).cpu().numpy()
 
     def run_and_save(
         self,
@@ -126,6 +129,7 @@ class Segmentor():
         verbose=False,
         skip_if_seg_exists=False,
         use_gpu=True,
+        save_logits=False
     ):
         """
         img                  - Path of input image
@@ -166,11 +170,16 @@ class Segmentor():
             img_slices,
             slices_info,
             sliding_transform_step=sliding_crop.stride_rate,
-            use_gpu=use_gpu)
+            use_gpu=use_gpu,
+            return_logits=save_logits)
             
 
         # save color
-        prediction_orig = output.max(0)[1].squeeze_(0).cpu().numpy()
+        if save_logits:
+            prediction_orig = output.max(0)[1].squeeze_(0).cpu().numpy()
+        else:
+            prediction_orig = output
+
         if self.colorize_fcn is not None:
             prediction_colorized = self.colorize_fcn(prediction_orig)
         else:
@@ -187,27 +196,28 @@ class Segmentor():
             #prediction_colorized.save('%s.png'%seg_path.split(".")[0])
             prediction_colorized.save('%s'%seg_path)
 
-
-        # save logits
-        output = output.unsqueeze(0)
-        logits = self.softmax(output)
-        #output_np = output.cpu().numpy()
-        logits_np = logits.cpu().numpy()[0,:,:,:]
-        #print(logits_np)
-        #print(logits_np.shape)
         
-        fname = os.path.basename(seg_path)
-        prob_out_dir = '%s/prob'%save_folder
-        for k in range(logits_np.shape[0]):
-            prob_k_fn = '%s/class_%d/%s'%(prob_out_dir, k, fname)
-            #print(prob_k_fn)
-            cv2.imwrite(prob_k_fn, (logits_np[k,:,:]*255).astype(np.uint8))
-        
+        if save_logits: # useful for SE xp
+            # save logits
+            output = output.unsqueeze(0)
+            logits = self.softmax(output)
+            #output_np = output.cpu().numpy()
+            logits_np = logits.cpu().numpy()[0,:,:,:]
+            #print(logits_np)
+            #print(logits_np.shape)
+            
+            fname = os.path.basename(seg_path)
+            prob_out_dir = '%s/prob'%save_folder
+            for k in range(logits_np.shape[0]):
+                prob_k_fn = '%s/class_%d/%s'%(prob_out_dir, k, fname)
+                #print(prob_k_fn)
+                cv2.imwrite(prob_k_fn, (logits_np[k,:,:]*255).astype(np.uint8))
+            
 
-        # save labels
-        lab_fn = '%s/lab/%s'%(save_folder, fname)
-        #print(lab_fn)
-        cv2.imwrite(lab_fn, prediction_orig.astype(np.uint8))
+            # save labels
+            lab_fn = '%s/lab/%s'%(save_folder, fname)
+            #print(lab_fn)
+            cv2.imwrite(lab_fn, prediction_orig.astype(np.uint8))
 
         return prediction_orig
 

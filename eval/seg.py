@@ -102,7 +102,8 @@ def segment_images_in_folder_for_experiments(network_folder, args):
             sliding_crop=sliding_crop,
             input_transform=input_transform,
             skip_if_seg_exists=True,
-            use_gpu=args['use_gpu'])
+            use_gpu=args['use_gpu'],
+            save_logits=False)
         count += 1
         if count == 3:
             break

@@ -130,7 +130,8 @@ def segment(slice_id, cam_id, survey_id):
             sliding_crop = sliding_crop,
             input_transform = input_transform,
             skip_if_seg_exists = True,
-            use_gpu = True)
+            use_gpu = True,
+            save_logits=True)
         count += 1
         #if count == 3:
         #    break

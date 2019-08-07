@@ -186,19 +186,19 @@ def evaluate_incremental(hist, predictions, gts, num_classes):
     # axis 0: gt, axis 1: prediction
     present_classes = hist.sum(axis=1) != 0
 
-    acc = np.diag(hist).sum() / hist.sum()
+    acc = np.diag(hist).sum() / hist.sum() # global acc
     acc_cls = np.diag(hist) / hist.sum(axis=1)
-
     #acc_cls = np.nanmean(acc_cls)
-    acc_cls = np.mean(acc_cls[present_classes])
+    acc_cls = np.mean(acc_cls[present_classes]) # mean acc/class
+
 
     iu = np.diag(hist) / (hist.sum(axis=1) + hist.sum(axis=0) - np.diag(hist))
-
     #mean_iu = np.nanmean(iu)
     mean_iu = np.mean(iu[present_classes])
 
     freq = hist.sum(axis=1) / hist.sum()
     fwavacc = (freq[freq > 0] * iu[freq > 0]).sum()
+
     return acc, acc_cls, mean_iu, fwavacc, hist
 
 
