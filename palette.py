@@ -74,23 +74,25 @@ palette = [[128, 64, 128],
         [0, 0, 230], 
         [119, 11, 32]]
 
-np.savetxt('meta/color_map.txt', np.array(palette), fmt='%d')
 
-
-h = 40
-num_class = len(label_name)
-img_size = h*num_class
-img = np.ones((img_size,img_size,3))*255
-color_bar = np.ones((num_class*h,h,3))
-for i in range(num_class):
-    begin = i*h
-    end = begin + h
-    color_bar[begin:end,:] = [palette[i][2], palette[i][1], palette[i][0]]
-    text_pos_x = h
-    text_pos_y = begin+int(0.7*h)
-    cv2.putText(img, str(i) + '-' + label_name[i], (text_pos_x,text_pos_y), fontFace=0, fontScale=0.5, color=(0,0,0))
-img[:,:h] = color_bar
-cv2.imwrite('meta/color_bar.png', img)
+if __name__=='__main__':
+    np.savetxt('meta/color_map.txt', np.array(palette), fmt='%d')
+    
+    
+    h = 40
+    num_class = len(label_name)
+    img_size = h*num_class
+    img = np.ones((img_size,img_size,3))*255
+    color_bar = np.ones((num_class*h,h,3))
+    for i in range(num_class):
+        begin = i*h
+        end = begin + h
+        color_bar[begin:end,:] = [palette[i][2], palette[i][1], palette[i][0]]
+        text_pos_x = h
+        text_pos_y = begin+int(0.7*h)
+        cv2.putText(img, str(i) + '-' + label_name[i], (text_pos_x,text_pos_y), fontFace=0, fontScale=0.5, color=(0,0,0))
+    img[:,:h] = color_bar
+    cv2.imwrite('meta/color_bar.png', img)
 
 
 

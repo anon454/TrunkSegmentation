@@ -15,6 +15,8 @@ import torchvision.transforms as standard_transforms
 from torch.autograd import Variable
 import torchvision.transforms.functional as F
 
+
+import cst
 #import sys
 #sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
@@ -152,7 +154,7 @@ class Segmentor():
                         "Segmentation already exists, overwriting: {}".format(seg_path))
 
         try:
-            img = cv2.imread(img_path)[:, :700]
+            img = cv2.imread(img_path)[:, :cst.W]
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             #img = Image.open(img_path).convert('RGB')
         except OSError:

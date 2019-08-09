@@ -25,47 +25,8 @@ ROOT_SEG_DIR = '/home/gpu_user/assia/ws/datasets/lake/datasets/seg/'
 NETWORK_FILE = 'pth/from-paper/CMU-CS-Vistas-CE.pth'
 NUM_CLASS = 19
 
-def segment(survey_id, seq_start, seq_end, iter_):
-    # output dir
-    out_root_dir = 'res/%d'%survey_id
 
-    img_dir = '%s/Dataset/20%d/%d/'%(ROOT_DATA_DIR, survey_id/10000, survey_id)
-    mask_dir = '%s/%d/water/auto/'%(ROOT_SEG_DIR, survey_id)
-    print(survey_id)
-    seq_dir_l = sorted(glob.glob('%s/00*'%img_dir))
-
-    filenames_ims, filenames_segs = [],[]
-    filenames_mask = []
-
-    for seq_dir in seq_dir_l:
-        seq = int(os.path.basename(seq_dir))
-        if int(seq)<seq_start:
-            continue
-        if int(seq) == seq_end:
-            break 
-        print('\n%04d'%seq)
-        seq_img_fn_l = sorted(os.listdir(seq_dir))
-        img_num = len(seq_img_fn_l)
-
-        out_dir = '%s/%04d/lab/'%(out_root_dir, seq)
-        if not os.path.exists(out_dir):
-            os.makedirs(out_dir)
-        
-        #for i, img_root_fn in enumerate(seq_img_fn_l[img_start:img_end+1]):
-        for i in range(0, img_num, iter_):
-            img_root_fn = seq_img_fn_l[i]
-            if i%100==0:
-                print('%d  %04d  %d/%d'%(survey_id, seq, i, img_num))
-
-            img_fn = '%s/%s'%(seq_dir, img_root_fn)
-            out_fn = '%s/%s.png'%(out_dir, img_root_fn.split(".")[0])
-            mask_fn = '%s/%04d/%s'%(mask_dir, seq, img_root_fn)
-            #print('%s\n%s'%(img_fn, out_fn))
-            print('mask_fn: %s'%mask_fn)
-            filenames_ims.append(img_fn)
-            filenames_segs.append(out_fn)
-            filenames_mask.append(mask_fn)
-
+def run_net(filenames_ims, filenames_segs, filenames_mask):
     # network model
     print("Using CUDA" if torch.cuda.is_available() else "Using CPU")
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -113,6 +74,63 @@ def segment(survey_id, seq_start, seq_end, iter_):
                 mask_path=mask_path)
         count += 1 
 
+
+def segment(survey_id, seq_start, seq_end, iter_):
+    # output dir
+    out_root_dir = 'res/%d'%survey_id
+
+    img_dir = '%s/Dataset/20%d/%d/'%(ROOT_DATA_DIR, survey_id/10000, survey_id)
+    mask_dir = '%s/%d/water/auto/'%(ROOT_SEG_DIR, survey_id)
+    print(survey_id)
+    seq_dir_l = sorted(glob.glob('%s/00*'%img_dir))
+
+    filenames_ims, filenames_segs = [],[]
+    filenames_mask = []
+
+    for seq_dir in seq_dir_l:
+        seq = int(os.path.basename(seq_dir))
+        if int(seq)<seq_start:
+            continue
+        if int(seq) == seq_end:
+            break 
+        print('\n%04d'%seq)
+        seq_img_fn_l = sorted(os.listdir(seq_dir))
+        img_num = len(seq_img_fn_l)
+
+        out_dir = '%s/%04d/lab/'%(out_root_dir, seq)
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+        
+        #for i, img_root_fn in enumerate(seq_img_fn_l[img_start:img_end+1]):
+        for i in range(0, img_num, iter_):
+            img_root_fn = seq_img_fn_l[i]
+            if i%100==0:
+                print('%d  %04d  %d/%d'%(survey_id, seq, i, img_num))
+
+            img_fn = '%s/%s'%(seq_dir, img_root_fn)
+            out_fn = '%s/%s.png'%(out_dir, img_root_fn.split(".")[0])
+            mask_fn = '%s/%04d/%s'%(mask_dir, seq, img_root_fn)
+            
+            # visual debug
+            if (0==1):
+                img = cv2.imread(img_fn)[:,:cst.W]
+                mask = cv2.imread(mask_fn, cv2.IMREAD_UNCHANGED)
+                print(mask.shape)
+                print(img.shape)
+                img[mask==1] = 0
+                cv2.imshow('img', img)
+                cv2.waitKey(0)
+
+            #print('%s\n%s'%(img_fn, out_fn))
+            print('mask_fn: %s'%mask_fn)
+            filenames_ims.append(img_fn)
+            filenames_segs.append(out_fn)
+            filenames_mask.append(mask_fn)
+
+
+    run_net(filenames_ims, filenames_segs, filenames_mask)
+
+    
 
 def get_good_pose(survey_id, seq_start, seq_end, iter_, survey_dir, pose_dir):
     # Load img list and timespamps
@@ -208,32 +226,34 @@ def get_good_pose(survey_id, seq_start, seq_end, iter_, survey_dir, pose_dir):
 
 
 def segment_across_season(survey0_id, survey1_id, seq_start, seq_end, iter_):
+    
+    
+    out_root_dir = 'res/%d_%d'%(survey0_id, survey1_id)
 
-    # sample images in survey0 then find nearest one in survey1
-
-    # sample images in survey0 with their good pose
-    pose0_l = get_good_pose(survey0_id, seq_start, seq_end, iter_, 
-            cst.SURVEY_DIR, cst.POSE_DIR)
-    #for pose in pose0_l:
-    #    print(pose)
-    #    break
-    #exit(0)
-    # sample all good poses for survey 1
-    pose1_l = get_good_pose(survey0_id, seq_start, seq_end, 10,
-            cst.SURVEY_DIR, cst.POSE_DIR)
-    #for pose in pose1_l:
-    #    print(pose)
+    poses0 = np.loadtxt('%s/datasets/poses/%d.txt'%(cst.SCRIPT_DIR, survey0_id))
+    poses1 = np.loadtxt('%s/datasets/poses/%d.txt'%(cst.SCRIPT_DIR, survey1_id))
 
 
-    # for each img in survey0_id, find the nearest one in survey1_id
-    #for pose in pose0_l:
-    #    print(pose)
-    #    print(pose[1])
-    #    input('wait')
-    t0 = np.array([pose[1][:3,3] for pose in pose0_l])
-    t1 = np.array([pose[1][:3,3] for pose in pose1_l])
-    q0 = np.array([Quaternion(matrix=pose[1][:3,:3]) for pose in pose0_l])
-    q1 = np.array([Quaternion(matrix=pose[1][:3,:3]) for pose in pose1_l])
+    # sample images of survey0 to segment
+    img0_id_v = poses0[:,0]
+    img0_seq_v = (img0_id_v/1000).astype(np.int)
+
+    id_start = np.where(img0_seq_v - seq_start > 0)[0][0]
+    id_end = np.where(img0_seq_v - seq_end > 0)[0][0]
+    #print(poses0[id_start,0])
+    #print(poses0[id_end,0])
+    #print(np.where(img0_seq_v - seq_start > 0)[0][0])
+    #print(np.where(img0_seq_v - seq_end > 0)[0][0])
+    
+    idx0_v =  np.arange(id_start, id_end, iter_)
+    img0_id_v = poses0[idx0_v, 0].astype(np.int)
+
+
+    # samples images of survey1 NN to images sampled above
+    t0 = poses0[idx0_v, 5:]
+    t1 = poses1[:, 5:]
+    q0 = poses0[idx0_v, 1:5]
+    q1 = poses1[:, 1:5]
 
     t0 = np.expand_dims(t0, 1)
     t1 = np.expand_dims(t1, 0)
@@ -242,28 +262,61 @@ def segment_across_season(survey0_id, survey1_id, seq_start, seq_end, iter_):
     match01 = np.argmin(d_t, axis=1)
 
     
-    # display matches
     img0_dir = '%s/%d/'%(cst.SURVEY_DIR, survey0_id)
     img1_dir = '%s/%d/'%(cst.SURVEY_DIR, survey1_id)
 
-    for i, pose in enumerate(pose0_l):
-        img0_id = pose[0]
-        img1_id = pose1_l[match01[i]][0]
+    mask0_dir = '%s/%d/water/auto/'%(cst.SEG_DIR, survey0_id)
+    mask1_dir = '%s/%d/water/auto/'%(cst.SEG_DIR, survey1_id)
 
+    ## display matches
+    #for i, img0_id in enumerate(img0_id_v):
+    #    img1_id = poses1[match01[i],0]
+    #    img0_fn = '%s/%04d/%04d.jpg'%(img0_dir, img0_id/1000, img0_id%1000)
+    #    img1_fn = '%s/%04d/%04d.jpg'%(img1_dir, img1_id/1000, img1_id%1000)
+    #    print('%s\n%s\n'%(img0_fn, img1_fn))
+
+    #    img0, img1 = cv2.imread(img0_fn), cv2.imread(img1_fn)
+    #    cv2.imshow('img0', img0)
+    #    cv2.imshow('img1', img1)
+    #    cv2.waitKey(0)
+
+
+    # segment
+    filenames_ims, filenames_segs = [],[]
+    filenames_mask = []
+    for i, img0_id in enumerate(img0_id_v):
+        
+        seq = int(img0_id)/1000
+        out_dir = '%s/%04d/'%(out_root_dir, seq)
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+
+        img1_id = poses1[match01[i],0]
         img0_fn = '%s/%04d/%04d.jpg'%(img0_dir, img0_id/1000, img0_id%1000)
         img1_fn = '%s/%04d/%04d.jpg'%(img1_dir, img1_id/1000, img1_id%1000)
-        print('%s\n%s\n'%(img0_fn, img1_fn))
 
-        img0, img1 = cv2.imread(img0_fn), cv2.imread(img1_fn)
-        cv2.imshow('img0', img0)
-        cv2.imshow('img1', img1)
-        cv2.waitKey(0)
+        out0_fn = '%s/%d_%d_%04d.png'%(out_dir, i, survey0_id, img0_id)
+        out1_fn = '%s/%d_%d_%04d.png'%(out_dir, i, survey1_id, img1_id)
 
+            
+        mask0_fn = '%s/%04d/%04d.jpg'%(mask0_dir, seq, img0_id)
+        mask1_fn = '%s/%04d/%04d.jpg'%(mask0_dir, seq, img1_id)
 
+        filenames_ims.append(img0_fn)
+        filenames_segs.append(out0_fn)
+        filenames_mask.append(mask0_fn)
 
+        filenames_ims.append(img1_fn)
+        filenames_segs.append(out1_fn)
+        filenames_mask.append(mask1_fn)
 
-     
+        print('%s\n%s\n%s\n%s'%(img0_fn, img1_fn, out0_fn, out1_fn))
+
     
+    run_net(filenames_ims, filenames_segs, filenames_mask)
+
+
+
 
 
 
@@ -272,16 +325,17 @@ if __name__ == '__main__':
     seq_start = 2
     seq_end = 32
 
-    survey_id = 150216
-    seq_start = 1
-    seq_end = 40
+    #survey_id = 150216
+    #seq_start = 1
+    #seq_end = 40
 
-    iter_ = 100
-    #segment(survey_id, seq_start, seq_end, iter_)
+    iter_ = 20
+    segment(survey_id, seq_start, seq_end, iter_)
 
 
-    survey0_id = 150429
-    survey1_id = 150216
-    segment_across_season(survey0_id, survey1_id, seq_start, seq_end, iter_)
+    #survey0_id = 150429
+    #survey1_id = 150216
+    #seq_start, seq_end = 2, 32
+    #segment_across_season(survey0_id, survey1_id, seq_start, seq_end, iter_)
 
 
