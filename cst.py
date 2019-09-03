@@ -31,6 +31,8 @@ POSE_DIR = '%s/MapsDyn'%ROOT_DATA_DIR
 SCRIPT_DIR = '%s/datasets/lake'%WS_DIR
 SEG_DIR = '%s/datasets/seg'%SCRIPT_DIR
 
+NETVLAD_DATA_DIR = '%s/datasets/netvlad'%SCRIPT_DIR
+
 LABEL = {'mask':0, 'water':1, 'sky':2, 'vegetation':3}
 COLOR = {'mask':[0,0,0], 'water':[255,0,0], 'sky':[255,255,0],
         'vegetation':[0,255,0]}

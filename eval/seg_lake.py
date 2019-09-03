@@ -61,7 +61,10 @@ def run_net(filenames_ims, filenames_segs, filenames_mask):
     t0 = time.time()
     for i, im_file in enumerate(filenames_ims):
         save_path = filenames_segs[i]
-        mask_path = filenames_mask[i]
+        if filenames_mask is not None:
+            mask_path = filenames_mask[i]
+        else:
+            mask_path = None
         tnow = time.time()
         print( "[%d/%d (%.1fs/%.1fs)] %s" % (count, len(filenames_ims), 
             tnow - t0, (tnow - t0) / count * len(filenames_ims), im_file))
@@ -317,6 +320,31 @@ def segment_across_season(survey0_id, survey1_id, seq_start, seq_end, iter_):
 
 
 
+def segment_val(data_id):
+    
+    filenames_ims, filenames_segs = [],[]
+
+    data_dir = '%s/%d/val/'%(cst.NETVLAD_DATA_DIR, data_id)
+    out_root_dir = 'res/%d'%(data_id)
+
+    qImage = np.loadtxt('%s/qImage.txt'%data_dir, dtype=str)
+    dbImage = np.loadtxt('%s/dbImage.txt'%data_dir, dtype=str)
+
+    print(np.hstack((qImage, dbImage)).shape)
+    for img_fn in np.hstack((qImage, dbImage)):
+        out_fn = img_fn.replace('VBags', 'res/%d'%data_id)
+        out_dir = os.path.dirname(out_fn)
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+
+        filenames_ims.append('%s/%s'%(cst.ROOT_DATA_DIR, img_fn))
+        filenames_segs.append(out_fn.replace('jpg', 'png'))
+
+        #print('%s/%s'%(cst.ROOT_DATA_DIR, img_fn))
+        #print(out_fn)
+        #input('\n')
+    
+    run_net(filenames_ims, filenames_segs, None)
 
 
 
@@ -329,8 +357,10 @@ if __name__ == '__main__':
     #seq_start = 1
     #seq_end = 40
 
-    iter_ = 20
-    segment(survey_id, seq_start, seq_end, iter_)
+    #iter_ = 20
+    #segment(survey_id, seq_start, seq_end, iter_)
+
+    segment_val(4)
 
 
     #survey0_id = 150429
