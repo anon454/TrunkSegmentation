@@ -59,10 +59,10 @@ class Segmentor():
             self.num_classes,
             img_slices.size(2),
             img_slices.size(3)).to(device)
-        
         for ind in range(0, img_slices.size(0), self.n_slices_per_pass):
             max_ind = min(ind + self.n_slices_per_pass, img_slices.size(0))
             with torch.no_grad():
+
                 output_slices[ind:max_ind, :, :, :] = self.net(
                     img_slices[ind:max_ind, :, :, :])
 

@@ -60,14 +60,13 @@ def train(args):
 
     # load datasets
     seg_set = lake.Lake(args, 'train')
-    seg_loader = DataLoader( seg_set, batch_size=args.batch_size,
-            num_workers=args.n_workers, shuffle=True)
+    seg_loader = DataLoader( seg_set, batch_size=args.batch_size, num_workers =args.n_workers, shuffle=True)
 
     val_set = lake.Lake(args, 'val')
     val_loader = DataLoader( val_set, batch_size=1,
-            num_workers=args.n_workers, shuffle=True)
+           num_workers =args.n_workers, shuffle=True)
     validator = Validator( val_loader, n_classes=n_classes,
-            save_snapshot=False, extra_name_str='lake')
+            save_snapshot=True, extra_name_str='lake')
     
 
     # Set log and summary
@@ -108,9 +107,9 @@ def train(args):
             optimizer.zero_grad()
             outputs, aux = net(inputs)
 
-            #print('inputs.shape', inputs.size())
-            #print('gts.shape', gts.size())
-            #print('outputs.shape', outputs.size())
+           # print('inputs.shape', inputs.size())
+           # print('gts.shape', gts.size())
+           # print('outputs.shape', outputs.size())
 
             main_loss = seg_loss_fct(outputs, gts)
             aux_loss = seg_loss_fct(aux, gts)
@@ -120,8 +119,7 @@ def train(args):
             
             curr_iter += 1
             val_iter += 1
-
-            
+        
             #seg_loss_meters.update( main_loss.item(), slice_batch_pixel_size)
             if curr_iter % args.summary_interval:
                 writer.add_scalar('train_loss', loss,  curr_iter)
@@ -171,7 +169,7 @@ def train(args):
                 f_handle.write(str2write + "\n")
             
         # validation
-        if epoch % args.val_interval==0:
+        if epoch % args.val_interval==0 and epoch !=0:
             eval_iter_max = 10
             validator.run( net, optimizer, best_record, curr_iter, res_dir,
                      f_handle, eval_iter_max, writer=writer)

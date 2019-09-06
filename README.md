@@ -1,3 +1,32 @@
+Get the code
+
+    git clone ...
+    cd ...
+    git fetch origin trunk 
+    git checkout trunk
+
+Get the pre-training weights (training from the cross-season paper).
+
+    cd pth
+    ./get.sh
+
+
+Generate your dataset
+
+
+
+Train: modify the path to img and segmentation in `train.sh`
+
+    img_root_dir=
+    seg_root_dir=
+
+Train   
+
+    ./train.sh <xp name>
+
+
+
+
 # A Cross-Season Correspondence Dataset for Robust Semantic Segmentation
 This is an implementation of the work published in A Cross-Season Correspondence Dataset for Robust Semantic Segmentation (https://arxiv.org/abs/1903.06916)
 

@@ -6,7 +6,7 @@ from PIL import Image
 from utils.misc import AverageMeter, evaluate_incremental, freeze_bn
 from utils.segmentor import Segmentor
 import torchvision.transforms.functional as F
-
+import cv2
 
 class Validator():
     def __init__(self, data_loader, n_classes=19,
@@ -36,8 +36,9 @@ class Validator():
 
             if prediction_tmp.shape != gt.shape:
                 prediction_tmp = prediction_tmp.astype(np.uint8)
-                prediction_tmp = cv2.resize(prediction_tmp, gt.shape[1,0], 
-                        cv2.INTERPOLATION_NEAREST)
+                print(gt.shape)
+                prediction_tmp = cv2.resize(prediction_tmp, gt.shape, 
+                        cv2.INTER_NEAREST)
 
             acc, acc_cls, mean_iu, fwavacc, confmat = evaluate_incremental(
                 confmat, prediction_tmp, gt, self.n_classes)

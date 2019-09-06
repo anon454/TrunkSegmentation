@@ -32,6 +32,7 @@ class RandomCrop(object):
             mask = ImageOps.expand(mask, border=self.padding, fill=0)
 
         assert img.size == mask.size
+        print(img.size)
         w, h = img.size
         th, tw = self.size
         if w == tw and h == th:
@@ -270,7 +271,6 @@ class SlidingCrop(object):
 
     def __call__(self, img, mask):
         assert img.size == mask.size
-
         w, h = img.size
         long_size = max(h, w)
 

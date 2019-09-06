@@ -12,7 +12,7 @@ import torchvision.transforms as standard_transforms
 
 import utils.joint_transforms as joint_transforms
 import tools
-
+import datasets.test_data as test_data
 ignore_label = 255
 
 
@@ -63,7 +63,7 @@ class Lake(Dataset):
                     self.val_crop_size, args.stride_rate)
         self.normalize = standard_transforms.Normalize(*self.mean_std)
         self.transform_before_sliding = standard_transforms.Resize(1024)
-
+        #self.convert_to_PIL = standard_transforms.ToPILImage()
 
     def augment(self, img, mask):
         h, w, c = img.shape
@@ -101,7 +101,29 @@ class Lake(Dataset):
         if self.debug:
             cv2.imshow('img', img)
             cv2.imshow('mask', mask)
-            mask_col = tools.mask2col(mask)
+            palette = [[128, 64, 128],
+                    [244, 35, 232],
+                    [70, 70, 70],
+                    [102, 102, 156],
+                    [190, 153, 153],
+                    [153, 153, 153],
+                    [250, 170, 30],
+                    [220, 220, 0],
+                    [107, 142, 35],
+                    [152, 251, 152],
+                    [70, 130, 180],
+                    [220, 20, 60],
+                    [255, 0, 0],
+                    [0, 0, 142],
+                    [0, 0, 70],
+                    [0, 60, 100],
+                    [0, 80, 100],
+                    [0, 0, 230],
+                    [119, 11, 32],
+                    [0, 0, 0]]
+            palette_bgr = [[ l[2], l[1], l[0]] for l in palette]
+
+            mask_col = test_data.lab2col(mask, palette_bgr)
             overlay = tools.gen_overlay(img, mask)
             cv2.imshow('mask_col', mask_col)
             cv2.imshow('overlay', overlay)
@@ -118,10 +140,9 @@ class Lake(Dataset):
         
         img_path = '%s/%s'%(self.img_root_dir, self.data[idx,0])
         mask_path = '%s/%s'%(self.seg_root_dir, self.data[idx,1])
-
-        img = cv2.imread(img_path)[:,:700]
+        #print(img_path)
+        img = cv2.imread(img_path)
         mask = cv2.imread(mask_path, cv2.IMREAD_UNCHANGED)
-
        
         img, mask = self.augment(img, mask)
         img = img.transpose((2,0,1)) # h,w,c -> c,h,w
@@ -138,9 +159,13 @@ class Lake(Dataset):
         
         # val
         if self.mode=='val':
+            
+            img = standard_transforms.ToPILImage()(img)
             img = self.transform_before_sliding(img)
+            #img = standard_transforms.ToTensor()(img)
+            #img = torch.Tensor(np.asarray(img))
             img_slices, slices_info = self.sliding_crop(img)
-            img_slices = [self.normalize(e) for e in img_slices]
+            img_slices = [self.normalize(standard_transforms.ToTensor()(e)) for e in img_slices]
             img = torch.stack(img_slices, 0)
             return img, mask, torch.LongTensor(slices_info)
 
