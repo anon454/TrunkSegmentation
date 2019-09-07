@@ -16,10 +16,11 @@ from utils.misc import AverageMeter, freeze_bn, rename_keys_to_match
 from datasets import lake
 from models import pspnet
 import tools
+import datasets.test_data as test_data
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-n_classes = 19
+n_classes = 2
 
 def train(args):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -101,9 +102,9 @@ def train(args):
 
             # get segmentation training sample
             inputs, gts = batch # next(iter(seg_loader))
+            #print("original gt", np.unique(gts))
             inputs, gts = inputs.to(device), gts.to(device)
             #slice_batch_pixel_size = inputs.size( 0) * inputs.size(2) * inputs.size(3)
-
             optimizer.zero_grad()
             outputs, aux = net(inputs)
 
@@ -131,7 +132,29 @@ def train(args):
                     output_np_copy[output_np == v] = k
                 output_np = output_np_copy
                 #print('output_np.shape', output_np.shape)
-                output_col = tools.mask2col(output_np)
+                palette = [[128, 64,128],
+                        [244, 32, 232],
+                        [70, 70, 70],
+                        [102, 102, 156],
+                        [190, 153, 153],
+                        [153, 153, 153],
+                        [250, 170, 30],
+                        [220, 220, 0],
+                        [107, 142, 35],
+                        [152, 251, 152],
+                        [70, 130, 180],
+                        [220, 20, 60],
+                        [255, 0, 0],
+                        [0, 0, 142],
+                        [0, 0, 70],
+                        [0, 60, 100],
+                        [0, 80, 100],
+                        [0, 0, 230],
+                        [119, 11, 32],
+                        [0, 0, 0]]
+                palette_bgr = [ [l[2], l[1], l[0]] for l in palette]
+                output_col = test_data.lab2col(output_np, palette_bgr)
+                print("output",np.unique(output_np))
                 #cv2.imshow('output_col', output_col)
                 #cv2.waitKey(0)
                 output_col = output_col[:,:,::-1]
@@ -141,11 +164,12 @@ def train(args):
 
                 gt_np = np.squeeze(gts.data.cpu().numpy()[0,:,:])
                 gt_np_copy = gt_np.copy()
+                #print(np.unique(gt_np_copy))
                 for k, v in seg_set.id_to_trainid.items():
                     gt_np_copy[gt_np == v] = k
                 gt_np = gt_np_copy
-
-                gt_col = tools.mask2col(gt_np)
+                #print("gt",np.unique(gt_np))
+                gt_col = test_data.lab2col(gt_np, palette_bgr)
                 gt_col = gt_col[:,:,::-1] # bgr -> rgb for tensorboard
                 #cv2.imshow('gt_col', gt_col)
                 #cv2.waitKey(0)

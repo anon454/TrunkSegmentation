@@ -132,7 +132,7 @@ class PSPNet(nn.Module):
 
 
 if __name__ == '__main__':
-    model = PSPNet(n_classes=19, n_blocks=[3, 4, 6, 3], pyramids=[6, 3, 2, 1])
+    model = PSPNet(n_classes=2, n_blocks=[3, 4, 6, 3], pyramids=[6, 3, 2, 1])
     print(list(model.named_children()))
     model.eval()
     image = torch.autograd.Variable(torch.randn(1, 3, 713, 713))

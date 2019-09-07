@@ -56,7 +56,7 @@ python3 -m train.train_pspnet \
   --train_crop_size 384 \
   --stride_rate 0.66 \
   --n_workers 0 \
-  --random_rotate 1 \
+  --random_rotate 0 \
   --rot_max 10 \
   --random_crop 1 \
   --random_flip 1 \
