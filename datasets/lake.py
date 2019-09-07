@@ -44,8 +44,8 @@ class Lake(Dataset):
         self.id_to_trainid = {}
         for i in range(33):
             self.id_to_trainid[i] = ignore_label
-        self.id_to_trainid[2] = 10 # sky
-        self.id_to_trainid[3] = 8 # vegetation
+        self.id_to_trainid[8] = 8 # vegetation
+        self.id_to_trainid[9] = 9 # terrain
 
         
         # data augmentation
