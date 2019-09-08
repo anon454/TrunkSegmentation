@@ -16,21 +16,21 @@ import torchvision.transforms as standard_transforms
 # colmap output dir
 MACHINE = 1
 if MACHINE == 0:
-    DATASET_DIR = '/home/abenbihi/ws/datasets/'
+    DATASET_DIR = '/home/gpu_user/aishwarya/dataset'
     WS_DIR = '/home/abenbihi/ws/'
     EXT_IMG_DIR = '/mnt/data_drive/dataset/Extended-CMU-Seasons/'
     #DATA_DIR = '/mnt/data_drive/dataset/CMU-Seasons/'
 elif MACHINE == 1:
-    DATASET_DIR = '/home/gpu_user/assia/ws/datasets/'
-    WS_DIR = '/home/gpu_user/assia/ws/'
-    EXT_IMG_DIR = '/home/gpu_user/assia/ws/datasets/Extended-CMU-Seasons/'
+    DATASET_DIR = '/home/gpu_user/aishwarya/dataset/'
+    WS_DIR = '/home/gpu_user/aishwarya/'
+    EXT_IMG_DIR = '/home/gpu_user/aishwarya/dataset/oak_images/'
     #DATA_DIR = '/home/abenbihi/ws/datasets/CMU-Seasons/'
 else:
     print('Get you MTF MACHINE macro correct !')
     exit(1)
 
     
-META_DIR = '%s/life_saver/datasets/CMU-Seasons/meta/'%WS_DIR
+META_DIR = '%s/cross-season-segmentation/meta/'%WS_DIR
 
 NETWORK_FILE = 'pth/from-paper/CMU-CS-Vistas-CE.pth'
 NUM_CLASS = 19
@@ -60,7 +60,7 @@ def run_net(filenames_ims, filenames_segs):
     pre_validation_transform = model_config.pre_validation_transform
     # make sure crop size and stride same as during training
     sliding_crop = joint_transforms.SlidingCropImageOnly(
-        713, 2/3.)
+        384, 2/3.)
 
 
     # encapsulate pytorch model in Segmentor class
