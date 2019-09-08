@@ -42,7 +42,7 @@ python3 -m train.train_pspnet \
   --max_epoch 50 \
   --batch_size 3 \
   --lr 2.5e-5 \
-  --lr_decay 1 \
+  --lr_decay 0 \
   --weight_decay 1e-4 \
   --momentum 0.9 \
   --startnet pth/from-paper/CMU-CS-Vistas-CE.pth \
