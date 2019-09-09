@@ -4,27 +4,34 @@ import os, sys, argparse
 import numpy as np
 from math import sqrt
 import cv2
+import time
+import PIL.Image
+import pickle
 
+from models import model_configs
 import torch
 import torchvision.transforms as standard_transforms
 from torch import optim
 from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
+from utils.segmentor import Segmentor
 
 from utils.validator import Validator
 from utils.misc import AverageMeter, freeze_bn, rename_keys_to_match
-from datasets import lake
+from utils.misc import evaluate_incremental
+from datasets import lake, cityscapes
 from models import pspnet
 import tools
 import datasets.test_data as test_data
+import utils.joint_transforms as joint_transforms 
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 n_classes = 19
-
+ignore_label = 255
 
 def run_net(filenames_img, filenames_segs):
-
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # Network and weight loading
     input_size = [args.train_crop_size, args.train_crop_size]
     net = pspnet.PSPNet(input_size=input_size).to(device)
@@ -42,11 +49,12 @@ def run_net(filenames_img, filenames_segs):
     net.eval()
 
     # data proc
+    model_config = model_configs.PspnetCityscapesConfig()
     input_transform = model_config.input_transform
     pre_validation_transform = model_config.pre_validation_transform
     # make sure crop size and stride same as during training
     sliding_crop = joint_transforms.SlidingCropImageOnly(
-        713, 2/3.)
+        args.val_crop_size, 2/3.)
 
     
     # encapsulate pytorch model in Segmentor class
@@ -57,13 +65,12 @@ def run_net(filenames_img, filenames_segs):
     # let's go
     count = 1
     t0 = time.time()
-    for i, im_file in enumerate(filenames_ims):
+    for i, im_file in enumerate(filenames_img):
         save_path = filenames_segs[i]
         tnow = time.time()
-        print( "[%d/%d (%.1fs/%.1fs)] %s" % (count, len(filenames_ims), 
-            tnow - t0, (tnow - t0) / count * len(filenames_ims), im_file))
+        print( "[%d/%d (%.1fs/%.1fs)] %s" % (count, len(filenames_img), 
+            tnow - t0, (tnow - t0) / count * len(filenames_img), im_file))
         #print(save_path)
-
         segmentor.run_and_save( im_file, save_path, '',
                 pre_sliding_crop_transform = pre_validation_transform,
                 sliding_crop = sliding_crop, input_transform = input_transform,
@@ -79,25 +86,24 @@ def val(args):
     val_dir = 'res/%d/val'%args.trial
 
     img_fn_v = np.loadtxt('meta/list/data/%d/val.txt'%args.data_id, dtype=str)[:,0]
-    filenames_ims = ['%s/%s'%(args.img_dir, l) for l in img_fn_v]
-    filenames_segs = ['%s/%s'%(val_dir, l) for l in img_fn_v]
+    filenames_img = ['%s/%s'%(args.img_root_dir, l) for l in img_fn_v]
+    filenames_segs = ['%s/%s'%(args.seg_root_dir, l) for l in img_fn_v]
 
     run_net(filenames_img, filenames_segs)
-    
-    
-    filenames_segs_gt = ['%s/%s'%(args.seg_dir, l) for l in img_fn_v]
-    confmat = np.zeros((self.n_classes, self.n_classes))
+     
+    filenames_segs_gt = ['%s/%s'%(args.seg_root_dir, l) for l in img_fn_v]
+    confmat = np.zeros((n_classes, n_classes))
     for seg_gt_fn, seg_fn in zip(filenames_segs_gt, filenames_segs):
-
+        
+        pred = np.asarray(PIL.Image.open(seg_fn))
         seg = cv2.imread(seg_fn, cv2.IMREAD_UNCHANGED)
         seg_gt = cv2.imread(seg_gt_fn, cv2.IMREAD_UNCHANGED)
-
         # convert to train ids
         seg_gt_copy = seg_gt.copy()
         
         id_to_trainid = {}
         for i in range(33):
-            sid_to_trainid[i] = ignore_label
+            id_to_trainid[i] = ignore_label
         id_to_trainid[8] = 8 # vegetation
         id_to_trainid[9] = 9 # terrain
 
@@ -106,7 +112,7 @@ def val(args):
                 seg_gt_copy[seg_gt == k] = v
 
         acc, acc_cls, mean_iu, fwavacc, confmat = evaluate_incremental(
-            confmat, pred, truth, 19)
+            confmat, pred, seg_gt_copy, 19)
 
     # Store confusion matrix and write result file
     with open('%s/confmat.pkl'%val_dir, 'wb') as confmat_file:
@@ -131,8 +137,12 @@ if __name__ == '__main__':
     parser.add_argument('--data_id', type=int)
     parser.add_argument('--img_root_dir', type=str)
     parser.add_argument('--seg_root_dir', type=str)
+    parser.add_argument('--val_crop_size', type=int)
+    parser.add_argument('--train_crop_size', type=int)
+    parser.add_argument('--stride_rate', type=float)
+    parser.add_argument('--n_workers', type=int)
 
 
     args = parser.parse_args()
 
-    train(args)
+    val(args)

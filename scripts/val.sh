@@ -21,8 +21,8 @@ python3 -m train.val_pspnet \
   --trial "$trial" \
   --trained_net pth/from-paper/CMU-CS-Vistas-CE.pth \
   --data_id 1 \
-  --img_root_dir meta/trunks/dataset/img_dir \
-  --seg_root_dir meta/trunks/dataset/seg_dir \
+  --img_root_dir /home/gpu_user/aishwarya/dataset/img_dir \
+  --seg_root_dir /home/gpu_user/aishwarya/dataset/seg_dir \
   --val_crop_size 384 \
   --train_crop_size 384 \
   --stride_rate 0.66 \
