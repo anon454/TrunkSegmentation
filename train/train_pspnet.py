@@ -95,6 +95,11 @@ def train(args):
     mean_std = ([-116.779/255.0, -103.939/255., -123.68/255.], [1, 1, 1])
     normalize_back = standard_transforms.Normalize(*mean_std)
 
+    epoch = 0
+    torch.save(net.state_dict(), '%s/snap/%d.pth'%(res_dir, epoch))
+    torch.save(optimizer.state_dict(), '%s/snap/%d_opt.pth'%(res_dir, epoch))
+    exit(0)
+
     for epoch in range(args.max_epoch):
         for batch_idx, batch in enumerate(seg_loader):
             optimizer.param_groups[0]['lr'] = 2 * args.lr * (1 - float(curr_iter) / max_iter) ** args.lr_decay
@@ -198,6 +203,12 @@ def train(args):
             validator.run( net, optimizer, best_record, curr_iter, res_dir,
                      f_handle, eval_iter_max, writer=writer)
 
+        # save
+        if epoch % args.save_interval==0 and epoch !=0:
+            torch.save(net.state_dict(), '%s/snap/%d.pth'%(res_dir, epoch))
+            torch.save(optimizer.state_dict(), '%s/snap/%d_opt.pth'%(res_dir, epoch))
+
+
     # Post training
     f_handle.close()
     writer.close()
@@ -223,6 +234,7 @@ if __name__ == '__main__':
     parser.add_argument('--log_interval', type=int)
     parser.add_argument('--summary_interval', type=int)
     parser.add_argument('--val_interval', type=int)
+    parser.add_argument('--save_interval', type=int)
 
     
     # data

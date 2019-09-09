@@ -1,6 +1,5 @@
 #!/bin/sh
 
-trial=1
 
 if [ "$#" -eq 0 ]; then
     echo "1. trial (xp name)"
@@ -13,6 +12,7 @@ if [ "$#" -ne 1 ]; then
     exit 1
 fi
 
+trial="$1"
 
 log_dir=res/"$trial"
 if [ -d "$log_dir" ]; then
@@ -48,7 +48,8 @@ python3 -m train.train_pspnet \
   --startnet pth/from-paper/CMU-CS-Vistas-CE.pth \
   --log_interval 50 \
   --summary_interval 10 \
-  --val_interval 1000 \
+  --val_interval 10 \
+  --save_interval 10 \
   --data_id 1 \
   --img_root_dir /home/gpu_user/aishwarya/dataset/img_dir \
   --seg_root_dir /home/gpu_user/aishwarya/dataset/seg_dir \
