@@ -20,7 +20,7 @@ import datasets.test_data as test_data
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-n_classes = 2
+n_classes = 19
 
 def train(args):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -94,12 +94,7 @@ def train(args):
         
     mean_std = ([-116.779/255.0, -103.939/255., -123.68/255.], [1, 1, 1])
     normalize_back = standard_transforms.Normalize(*mean_std)
-
-    epoch = 0
-    torch.save(net.state_dict(), '%s/snap/%d.pth'%(res_dir, epoch))
-    torch.save(optimizer.state_dict(), '%s/snap/%d_opt.pth'%(res_dir, epoch))
-    exit(0)
-
+    
     for epoch in range(args.max_epoch):
         for batch_idx, batch in enumerate(seg_loader):
             optimizer.param_groups[0]['lr'] = 2 * args.lr * (1 - float(curr_iter) / max_iter) ** args.lr_decay

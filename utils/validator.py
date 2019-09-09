@@ -16,7 +16,7 @@ class Validator():
         self.save_snapshot = save_snapshot
         self.extra_name_str = extra_name_str
 
-    def run(self, net, optimizer, best_record, curr_iter,
+    def run(self, net, optimizer, best_record, epoch,
             res_dir, f_handle, iter_max, writer=None):
         # the following code is written assuming that batch size is 1
         net.eval()
@@ -51,20 +51,20 @@ class Validator():
         # Store confusion matrix
         confmatdir = '%s/val/confmat'%res_dir
         os.makedirs(confmatdir, exist_ok=True)
-        with open(os.path.join(confmatdir, self.extra_name_str + str(curr_iter) + '_confmat.pkl'), 'wb') as confmat_file:
+        with open(os.path.join(confmatdir, self.extra_name_str + str(epoch) + '_confmat.pkl'), 'wb') as confmat_file:
             pickle.dump(confmat, confmat_file)
 
         
         if self.save_snapshot:
             # save state
             snapshot_name = 'iter_%d_acc_%.5f_acc-cls_%.5f_mean-iu_%.5f_fwavacc_%.5f_lr_%.10f' % (
-                curr_iter, acc, acc_cls, mean_iu, fwavacc, optimizer.param_groups[1]['lr'])
+                epoch, acc, acc_cls, mean_iu, fwavacc, optimizer.param_groups[1]['lr'])
             torch.save(net.state_dict(), '%s/snap/%s.pth'%(res_dir, snapshot_name))
-            torch.save( optimizer.state_dict(), '%s/snap/opt_%s.pth'%(save_dir,snapshot_name))
+            torch.save( optimizer.state_dict(), '%s/snap/opt_%s.pth'%(res_dir,snapshot_name))
 
             # save perf of this state if it is the new best state
             if best_record['mean_iu'] < mean_iu:
-                best_record['iter'] = curr_iter
+                best_record['epoch'] = epoch
                 best_record['acc'] = acc
                 best_record['acc_cls'] = acc_cls
                 best_record['mean_iu'] = mean_iu
@@ -80,15 +80,15 @@ class Validator():
             f_handle.write(str2write + "\n")
 
         str2write = 'Current    : iter: %d\tacc: %.5f\tacc_cls: %.5f\tmean_iu %.5f\tfwavacc %.5f' % (
-                curr_iter, acc, acc_cls, mean_iu, fwavacc)
+                epoch, acc, acc_cls, mean_iu, fwavacc)
         print(str2write)
         f_handle.write(str2write + "\n")
 
         if writer is not None:
-            writer.add_scalar('acc', acc, curr_iter)
-            writer.add_scalar('acc_cls', acc_cls, curr_iter)
-            writer.add_scalar('mean_iu', mean_iu, curr_iter)
-            writer.add_scalar('fwavacc', fwavacc, curr_iter)
+            writer.add_scalar('acc', acc, epoch)
+            writer.add_scalar('acc_cls', acc_cls, epoch)
+            writer.add_scalar('mean_iu', mean_iu, epoch)
+            writer.add_scalar('fwavacc', fwavacc, epoch)
 
         net.train()
         #if 'freeze_bn' not in args or args.freeze_bn:
