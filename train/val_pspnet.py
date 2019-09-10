@@ -70,7 +70,7 @@ def run_net(filenames_img, filenames_segs):
         tnow = time.time()
         print( "[%d/%d (%.1fs/%.1fs)] %s" % (count, len(filenames_img), 
             tnow - t0, (tnow - t0) / count * len(filenames_img), im_file))
-        #print(save_path)
+        print(save_path)
         segmentor.run_and_save( im_file, save_path, '',
                 pre_sliding_crop_transform = pre_validation_transform,
                 sliding_crop = sliding_crop, input_transform = input_transform,
@@ -87,7 +87,7 @@ def val(args):
 
     img_fn_v = np.loadtxt('meta/list/data/%d/val.txt'%args.data_id, dtype=str)[:,0]
     filenames_img = ['%s/%s'%(args.img_root_dir, l) for l in img_fn_v]
-    filenames_segs = ['%s/%s'%(args.seg_root_dir, l) for l in img_fn_v]
+    filenames_segs = ['%s/%s'%(args.seg_save_root, l) for l in img_fn_v]
 
     run_net(filenames_img, filenames_segs)
      
@@ -141,6 +141,7 @@ if __name__ == '__main__':
     parser.add_argument('--train_crop_size', type=int)
     parser.add_argument('--stride_rate', type=float)
     parser.add_argument('--n_workers', type=int)
+    parser.add_argument('--seg_save_root', type=str)
 
 
     args = parser.parse_args()
