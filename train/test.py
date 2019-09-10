@@ -35,10 +35,9 @@ def run_net(filenames_img, filenames_segs):
 
     input_size = [args.train_crop_size, args.train_crop_size]
     net = pspnet.PSPNet(input_size = input_size).to(device)
-    if not os.path.exists(args.traind_net):
+    if not os.path.exists(args.trained_net):
         print("Error: no trained net to evaluate")
         exit(1)
-
     state_dict = torch.load(args.trained_net)
     #needed since we slightly changed the structure of the network in pspnet
     state_dict = rename_keys_to_match(state_dict)
@@ -67,8 +66,10 @@ def run_net(filenames_img, filenames_segs):
     for i, im_file in enumerate(filenames_img):
         save_path = filenames_segs[i]
         tnow = time.time()
-        print( "[%d/%d (%.1fs)] %s" %(count, len(filenames_img),
-            tnow - t0, (tnow - t0)/count * len(filenames_img), im_file))
+        print( "[%d/%d (%.1fs/%.1fs)] %s" % (count, len(filenames_img),
+                        tnow - t0, (tnow - t0) / count * len(filenames_img),
+                        im_file))
+
         print(save_path)
 
         segmentor.run_and_save(im_file, save_path, '',
@@ -85,7 +86,7 @@ def test(args):
     snap_dir = 'res/%d/snap'%args.trial
     val_dir = 'res/%d/val'%args.trial
 
-    img_fn_v = np.loadtxt('meta/list/data/%d/all_img.txt'%args.data_id, dtype=str)[:,0]
+    img_fn_v = np.loadtxt('meta/list/data/%d/all_img.txt'%args.data_id, dtype=str)
     filenames_img = ['%s/%s'%(args.img_root_dir, l) for l in img_fn_v]
     filenames_segs = ['%s/%s'%(args.seg_save_root, l) for l in img_fn_v]
 
@@ -104,7 +105,7 @@ if __name__ == '__main__':
         # data
         parser.add_argument('--data_id', type=int)
         parser.add_argument('--img_root_dir', type=str)
-        parser.add_argument('--seg_root_dir', type=str)
+        #parser.add_argument('--seg_root_dir', type=str)
         parser.add_argument('--val_crop_size', type=int)
         parser.add_argument('--train_crop_size', type=int)
         parser.add_argument('--stride_rate', type=float)

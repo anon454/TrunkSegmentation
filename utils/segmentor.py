@@ -158,6 +158,7 @@ class Segmentor():
             #img = cv2.imread(img_path)[:, :cst.W]
             #img = cv2.resize(img, None, fx=0.4, fy=0.4,
             #        interpolation=cv2.INTER_AREA)
+            img = img.astype('uint8')
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             #img = Image.open(img_path).convert('RGB')
         except OSError:
