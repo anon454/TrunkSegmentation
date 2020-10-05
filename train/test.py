@@ -65,12 +65,14 @@ def run_net(filenames_img, filenames_segs):
     t0 = time.time()
     for i, im_file in enumerate(filenames_img):
         save_path = filenames_segs[i]
+        try:
+            os.makedirs(os.path.dirname(save_path))
+        except:
+            pass
         tnow = time.time()
         print( "[%d/%d (%.1fs/%.1fs)] %s" % (count, len(filenames_img),
                         tnow - t0, (tnow - t0) / count * len(filenames_img),
                         im_file))
-
-        print(save_path)
 
         segmentor.run_and_save(im_file, save_path, '',
                 pre_sliding_crop_transform = pre_validation_transform,
@@ -81,14 +83,9 @@ def run_net(filenames_img, filenames_segs):
 def test(args):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    res_dir = 'res/%d'%args.trial
-    log_dir = 'res/%d/log'%args.trial
-    snap_dir = 'res/%d/snap'%args.trial
-    val_dir = 'res/%d/val'%args.trial
-
-    img_fn_v = np.loadtxt('meta/list/data/%d/all_img.txt'%args.data_id, dtype=str)
-    filenames_img = ['%s/%s'%(args.img_root_dir, l) for l in img_fn_v]
-    filenames_segs = ['%s/%s'%(args.seg_save_root, l) for l in img_fn_v]
+    img_fn_v = np.loadtxt(args.csv_path, dtype=str)
+    filenames_img = ['%s/%s'%(args.img_root_dir, l.split(' ')[0]) for l in img_fn_v]
+    filenames_segs = ['%s/%s'%(args.seg_save_root, l.split(' ')[0]) for l in img_fn_v]
 
     run_net(filenames_img, filenames_segs)
 
@@ -104,8 +101,8 @@ if __name__ == '__main__':
 
         # data
         parser.add_argument('--data_id', type=int)
+        parser.add_argument('--csv_path', type=str)
         parser.add_argument('--img_root_dir', type=str)
-        #parser.add_argument('--seg_root_dir', type=str)
         parser.add_argument('--val_crop_size', type=int)
         parser.add_argument('--train_crop_size', type=int)
         parser.add_argument('--stride_rate', type=float)

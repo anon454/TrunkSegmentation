@@ -25,11 +25,10 @@ n_classes = 19
 def train(args):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
-    res_dir = 'res/%d'%args.trial
-    log_dir = 'res/%d/log'%args.trial
-    snap_dir = 'res/%d/snap'%args.trial
-    val_dir = 'res/%d/val'%args.trial
-
+    res_dir = args.logdir+'/%d'%args.trial
+    log_dir = args.logdir+'/%d/log'%args.trial
+    snap_dir = args.logdir+'/%d/snap'%args.trial
+    val_dir = args.logdir+'/%d/val'%args.trial
 
     # Network and weight loading
     input_size = [args.train_crop_size, args.train_crop_size]
@@ -94,7 +93,6 @@ def train(args):
         
     mean_std = ([-116.779/255.0, -103.939/255., -123.68/255.], [1, 1, 1])
     normalize_back = standard_transforms.Normalize(*mean_std)
-    
     for epoch in range(args.max_epoch):
         for batch_idx, batch in enumerate(seg_loader):
             optimizer.param_groups[0]['lr'] = 2 * args.lr * (1 - float(curr_iter) / max_iter) ** args.lr_decay
@@ -154,7 +152,7 @@ def train(args):
                         [0, 0, 0]]
                 palette_bgr = [ [l[2], l[1], l[0]] for l in palette]
                 output_col = test_data.lab2col(output_np, palette_bgr)
-                print("output",np.unique(output_np))
+                #print("output",np.unique(output_np))
                 #cv2.imshow('output_col', output_col)
                 #cv2.waitKey(0)
                 output_col = output_col[:,:,::-1]
@@ -235,6 +233,8 @@ if __name__ == '__main__':
     # data
     parser.add_argument('--data_id', type=int)
     parser.add_argument('--img_root_dir', type=str)
+    parser.add_argument('--logdir', type=str)
+    parser.add_argument('--csv_path', type=str)
     parser.add_argument('--seg_root_dir', type=str)
     parser.add_argument('--val_crop_size', type=int)
     parser.add_argument('--train_crop_size', type=int)

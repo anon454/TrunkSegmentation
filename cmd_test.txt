@@ -1,0 +1,1 @@
+./scripts/test.sh 1 /home/gpu_user/antoine/ReconstructionPipeline/robinia/1/snap/iter_20168_acc_0.68614_acc-cls_0.49937_mean-iu_0.34494_fwavacc_0.47353_lr_0.0000250000.pth /home/gpu_user/antoine/ReconstructionPipeline/mask_dataset/images /home/gpu_user/antoine/ReconstructionPipeline/NN_masks /home/gpu_user/antoine/ReconstructionPipeline/2NN_save.txt

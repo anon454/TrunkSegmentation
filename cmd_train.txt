@@ -1,0 +1,1 @@
+./scripts/train.sh /home/gpu_user/antoine/ReconstructionPipeline/robinia 1 /home/gpu_user/antoine/ReconstructionPipeline/dataset_description.txt /home/gpu_user/antoine/ReconstructionPipeline/trunk_segmentation/pth/CMU-CS-Vistas-CE.pth

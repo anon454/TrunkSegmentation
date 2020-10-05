@@ -30,14 +30,13 @@ class Lake(Dataset):
         
         self.mode = mode
         self.data_id = args.data_id
-        self.img_root_dir = args.img_root_dir
-        self.seg_root_dir = args.seg_root_dir
+        self.args = args
         self.mean_std = ([116.779, 103.939, 123.68], [1, 1, 1])
         self.rot_max = args.rot_max
         self.train_crop_size = args.train_crop_size
         self.val_crop_size = args.val_crop_size
 
-        csv_file = 'meta/list/data/%d/%s.txt'%(args.data_id, mode)
+        csv_file = args.csv_path
         self.data = np.loadtxt(csv_file, dtype=str)
         
         # mapping from my labels to cityscapes (may be useless in the future)
@@ -128,7 +127,7 @@ class Lake(Dataset):
             cv2.imshow('mask_col', mask_col)
             cv2.imshow('overlay', overlay)
             cv2.waitKey(0)
-
+            print("somewhere augmentation probably", np.unique(mask))
         return img, mask
 
 
@@ -138,11 +137,10 @@ class Lake(Dataset):
 
     def __getitem__(self, idx):
         
-        img_path = '%s/%s'%(self.img_root_dir, self.data[idx,0])
-        mask_path = '%s/%s'%(self.seg_root_dir, self.data[idx,1])
-        #print(img_path)
+        img_path = os.path.join(self.args.img_root_dir,self.data[idx])
+        mask_path = os.path.join(self.args.seg_root_dir,self.data[idx])
         img = cv2.imread(img_path)
-        mask = cv2.imread(mask_path, cv2.IMREAD_UNCHANGED)
+        mask = cv2.imread(mask_path, cv2.IMREAD_UNCHANGED)+1
        
         img, mask = self.augment(img, mask)
         img = img.transpose((2,0,1)) # h,w,c -> c,h,w
